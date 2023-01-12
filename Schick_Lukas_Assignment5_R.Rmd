@@ -3,17 +3,33 @@ title: "Schick_Lukas_Assignment5_R"
 output: html_document
 date: "2023-01-12"
 ---
+https://github.com/slukas99/DSPM_Assignment5
 
 ```{r setup}
+rm(list = ls())
 
+library(jsonlite)
+library(httr)
+library(rlist)
+library(tidyverse)
+
+#get api key from seperate file
+api_key <- source("API_key_A5.R")
 ```
 
-## R Markdown
+## Exercise 7
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+#perform get request of ticketmaster site to get all venues in Germany
+res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
+           query = list(apikey = api_key$value,
+                        countryCode = 'DE'))
+           
+Sys.sleep(0.2)
 
-```{r cars}
-summary(cars)
+#extract content from response objects
+ticketmaster <- content(res)
+
 ```
+The resulting list gives information on the returned venues, a specific venue can be accessed by appending `_embedded`$venues[[x]] to the content object. In this way, information on a specific venue, like its name, address or city can be accessed. There is also additional information on the number of results per page, the number of pages, total results and the current page number and more. 
