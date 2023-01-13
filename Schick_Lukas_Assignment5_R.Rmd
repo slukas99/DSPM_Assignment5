@@ -17,6 +17,8 @@ api_key <- source("API_key_A5.R")
 
 ## Exercises 7 + 8
 
+The resulting list gives information on the returned venues, a specific venue can be accessed by appending `_embedded`$venues[[x]] to the content object. In this way, information on a specific venue, like its name, address or city can be accessed. There is also additional information on the number of results per page, the number of pages, total results and the current page number and more. 
+
 ```{r}
 #perform get request of ticketmaster site to get all venues in Germany
 res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
@@ -79,8 +81,6 @@ for (i in 1:length(page_venues)){
 head(venues)
 
 ```
-
-The resulting list gives information on the returned venues, a specific venue can be accessed by appending `_embedded`$venues[[x]] to the content object. In this way, information on a specific venue, like its name, address or city can be accessed. There is also additional information on the number of results per page, the number of pages, total results and the current page number and more. 
 
 ## Exercise 9
 
