@@ -6,8 +6,6 @@ date: "2023-01-12"
 https://github.com/slukas99/DSPM_Assignment5
 
 ```{r setup}
-rm(list = ls())
-
 library(jsonlite)
 library(httr)
 library(rlist)
@@ -17,19 +15,203 @@ library(tidyverse)
 api_key <- source("API_key_A5.R")
 ```
 
-## Exercise 7
-
+## Exercises 7 + 8
 
 ```{r}
 #perform get request of ticketmaster site to get all venues in Germany
 res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
            query = list(apikey = api_key$value,
-                        countryCode = 'DE'))
-           
-Sys.sleep(0.2)
+                        countryCode = 'DE'
+                        ))
+      
 
 #extract content from response objects
 ticketmaster <- content(res)
 
+#initialize empty dataframe to store results
+venues <- data.frame(matrix(0, ncol = 7, nrow = ticketmaster$page$size))
+colnames(venues) <- c("name", "city", "postalCode", "address", "url", "longitude", "latitude")
+
+#find out how many results are on the page
+page_venues <- ticketmaster$`_embedded`$venues
+
+#for each result on the page, do the following
+for (i in 1:length(page_venues)){
+  
+  #get name, city, postalCode etc. if they are available, otherwise use NA
+  if (is.null(page_venues[[i]]$name)){
+    venues$name[i] <- NA
+      } else {
+        venues$name[i] <- page_venues[[i]]$name
+        }
+  if (is.null(page_venues[[i]]$city$name)){
+    venues$city[i] <- NA
+    } else {
+      venues$city[i] <- page_venues[[i]]$city$name
+      }
+  if (is.null(page_venues[[i]]$postalCode)){
+    venues$postalCode[i] <- NA
+    } else {
+      venues$postalCode[i] <- page_venues[[i]]$postalCode
+      }
+  if (is.null(page_venues[[i]]$address$line1)){
+    venues$address[i] <- NA
+    } else {
+      venues$address[i] <- page_venues[[i]]$address$line1
+      }
+  if (is.null(page_venues[[i]]$url)){
+    venues$url[i] <- NA
+    } else {
+      venues$url[i] <- page_venues[[i]]$url
+      }
+  if (is.null(page_venues[[i]]$location$longitude)){
+    venues$longitude[i] <- NA
+    } else {
+      venues$longitude[i] <- page_venues[[i]]$location$longitude
+      }
+  if (is.null(page_venues[[i]]$location$latitude)){
+    venues$latitude[i] <- NA
+    } else {
+      venues$latitude[i] <- page_venues[[i]]$location$latitude
+    }
+}
+
+head(venues)
+
 ```
+
 The resulting list gives information on the returned venues, a specific venue can be accessed by appending `_embedded`$venues[[x]] to the content object. In this way, information on a specific venue, like its name, address or city can be accessed. There is also additional information on the number of results per page, the number of pages, total results and the current page number and more. 
+
+## Exercise 9
+
+```{r}
+#compute total number of result pages, count starts at 0, so take -1
+num_pages <- ticketmaster$page$totalPages - 1
+
+#initialize dataframe to store total results in
+venues_total <- data.frame(name = NULL, city = NULL, postalCode = NULL, 
+                           address = NULL, url = NULL, longitude = NULL, 
+                           latitude = NULL)
+
+#for each result page, do the following
+for (j in 0:num_pages){
+  
+  #enforce pause in execution to adhere to rate limit (5 requests per second)
+  Sys.sleep(.2)
+  
+  #perform get request of ticketmaster site to get all venues in Germany
+  res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
+             query = list(apikey = api_key$value,
+                          countryCode = 'DE',
+                          page = j))
+  
+  #extract content from response objects
+  ticketmaster <- content(res)
+  
+  #extract venue information into new object for easier access
+  page_venues <- ticketmaster$`_embedded`$venues
+  
+  #check if there are results on the page (sometimes due to connection errors, no results will show up)
+  if (length(page_venues) > 0) {
+    
+    #initialize empty dataframe to store results on this page
+    venues <- data.frame(matrix(0, ncol = 7, nrow = length(page_venues)))
+    colnames(venues) <- c("name", "city", "postalCode", "address", "url", "longitude", "latitude")
+  
+    #get name, city, postalCode etc. if they are available, otherwise use NA
+    for (i in 1:length(page_venues)){
+    
+      if (is.null(page_venues[[i]]$name)){
+        venues$name[i] <- NA
+      } else {
+        venues$name[i] <- page_venues[[i]]$name
+      }
+      if (is.null(page_venues[[i]]$city$name)){
+        venues$city[i] <- NA
+      } else {
+        venues$city[i] <- page_venues[[i]]$city$name
+      }
+      if (is.null(page_venues[[i]]$postalCode)){
+        venues$postalCode[i] <- NA
+      } else {
+        venues$postalCode[i] <- page_venues[[i]]$postalCode
+      }
+      if (is.null(page_venues[[i]]$address$line1)){
+        venues$address[i] <- NA
+      } else {
+        venues$address[i] <- page_venues[[i]]$address$line1
+      }
+      if (is.null(page_venues[[i]]$url)){
+        venues$url[i] <- NA
+      } else {
+        venues$url[i] <- page_venues[[i]]$url
+      }
+      if (is.null(page_venues[[i]]$location$longitude)){
+        venues$longitude[i] <- NA
+      } else {
+        venues$longitude[i] <- page_venues[[i]]$location$longitude
+      }
+      if (is.null(page_venues[[i]]$location$latitude)){
+        venues$latitude[i] <- NA
+      } else {
+        venues$latitude[i] <- page_venues[[i]]$location$latitude
+      }
+    }
+    
+    #append results of this page to total results
+    venues_total <- rbind(venues_total,venues)
+  }
+  
+}
+
+```
+
+```{r}
+#print first ten results and shape of the total results dataframe
+print(head(venues_total, 10))
+
+print(dim(venues_total))
+```
+
+##Exercises 10 + 11
+
+```{r}
+#convert longitude and latitude to numeric for later use
+venues_total$longitude <- as.numeric(venues_total$longitude)
+venues_total$latitude <- as.numeric(venues_total$latitude)
+```
+
+```{r}
+#remove venues with NAs for positional information
+venues_total <- venues_total[!is.na(venues_total$longitude),]
+```
+
+```{r}
+#get indices of results with "wrong" coordinates
+false_coords <- as.numeric(venues_total$longitude) < 5.866 | as.numeric(venues_total$longitude) > 15.042 | 
+  as.numeric(venues_total$latitude) < 47.270 | as.numeric(venues_total$latitude) > 55.059
+
+```
+
+```{r}
+#remove results with "wrong" coordinates
+venues_total <- venues_total[!false_coords,]
+
+```
+
+```{r}
+#plot locations of results on a map of Germany
+ggplot() +
+  borders("world", "Germany", colour = "black", fill = "grey90") +
+  geom_point(data = venues_total, aes(x = as.numeric(longitude), y = as.numeric(latitude))) + 
+  theme_void() +
+  coord_quickmap() +
+  labs(title = "Event locations across Germany",
+       caption = "Source: ticketmaster.com") +
+  theme(title = element_text(size=8, face='bold'),
+        plot.caption = element_text(face = "italic"))
+```
+
+```{r}
+
+```
