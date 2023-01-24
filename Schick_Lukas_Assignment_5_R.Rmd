@@ -3,6 +3,8 @@ title: "Schick_Lukas_Assignment5_R"
 output: html_document
 date: "2023-01-24"
 ---
+### Lukas Schick (Student ID: 6291976)
+
 https://github.com/slukas99/DSPM_Assignment5
 
 ```{r setup}
@@ -243,7 +245,7 @@ venues_total <- data.frame(name = NULL, city = NULL, postalCode = NULL,
 for (j in 0:num_pages){
   
   #enforce pause in execution to adhere to rate limit (5 requests per second)
-  Sys.sleep(.2)
+  Sys.sleep(.5)
   
   #perform get request of ticketmaster site to get all venues in France
   res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
