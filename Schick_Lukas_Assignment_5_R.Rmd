@@ -1,7 +1,7 @@
 ---
 title: "Schick_Lukas_Assignment5_R"
 output: html_document
-date: "2023-01-24"
+date: "2023-01-26"
 ---
 ### Lukas Schick (Student ID: 6291976)
 
@@ -29,7 +29,8 @@ The resulting list gives information on the returned venues, a specific venue ca
 #perform get request of ticketmaster site to get all venues in Germany
 res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
            query = list(apikey = api_key$value,
-                        countryCode = 'DE'
+                        countryCode = 'DE',
+                        locale = "*"
                         ))
       
 
@@ -91,6 +92,18 @@ head(venues)
 ## Exercise 9
 
 ```{r}
+#perform get request of ticketmaster site to get all venues in Germany
+res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
+           query = list(apikey = api_key$value,
+                        countryCode = 'DE',
+                        locale = "*",
+                        size = 500
+                        ))
+      
+
+#extract content from response objects
+ticketmaster <- content(res)
+
 #compute total number of result pages, count starts at 0, so take -1
 num_pages <- ticketmaster$page$totalPages - 1
 
@@ -102,13 +115,15 @@ venues_total <- data.frame(name = NULL, city = NULL, postalCode = NULL,
 #for each result page, do the following
 for (j in 0:num_pages){
   
-  #enforce pause in execution to adhere to rate limit (2 requests per second)
-  Sys.sleep(.5)
+  #enforce pause in execution to adhere to rate limit (1 request per second)
+  Sys.sleep(1)
   
   #perform get request of ticketmaster site to get all venues in Germany
   res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
              query = list(apikey = api_key$value,
                           countryCode = 'DE',
+                          locale = "*",
+                          size = 500,
                           page = j))
   
   #extract content from response objects
@@ -179,9 +194,7 @@ print(head(venues_total, 10))
 print(dim(venues_total))
 ```
 
-Note on the dimensions of venues_total: Because of a SpikeArrestViolation, the results of some pages are not available, even though the suggested pause of 0.2s between requests is included. This means that for any given run of the two code chunks above, the number of rows of the total results is not always the whole 4745, but may be up to 80 results less. (this means results for 4 pages are not included)
-
-##Exercises 10 + 11
+## Exercises 10 + 11
 
 ```{r}
 #convert longitude and latitude to numeric for later use
@@ -220,13 +233,15 @@ ggplot() +
         plot.caption = element_text(face = "italic"))
 ```
 
-##Exercise 12
+## Exercise 12
 
 ```{r}
-#perform get request of ticketmaster site to get all venues in France
+#perform get request of ticketmaster site to get all venues in Switzerland
 res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
            query = list(apikey = api_key$value,
-                        countryCode = 'FR'
+                        countryCode = 'CH',
+                        locale = "*",
+                        size = 500
                         ))
       
 
@@ -244,13 +259,15 @@ venues_total <- data.frame(name = NULL, city = NULL, postalCode = NULL,
 #for each result page, do the following
 for (j in 0:num_pages){
   
-  #enforce pause in execution to adhere to rate limit (5 requests per second)
-  Sys.sleep(.5)
+  #enforce pause in execution to adhere to rate limit (1 request per second)
+  Sys.sleep(1)
   
-  #perform get request of ticketmaster site to get all venues in France
+  #perform get request of ticketmaster site to get all venues in Switzerland
   res <- GET(url = 'https://app.ticketmaster.com/discovery/v2/venues?', 
              query = list(apikey = api_key$value,
-                          countryCode = 'FR',
+                          countryCode = 'CH',
+                          locale = "*",
+                          size = 500,
                           page = j))
   
   #extract content from response objects
@@ -332,9 +349,9 @@ venues_total <- venues_total[!is.na(venues_total$longitude),]
 ```
 
 ```{r}
-#get indices of results with "wrong" coordinates (only include mainland France)
-false_coords <- as.numeric(venues_total$longitude) < -4.783 | as.numeric(venues_total$longitude) > 8.216 | 
-  as.numeric(venues_total$latitude) < 42.333 | as.numeric(venues_total$latitude) > 51.083
+#get indices of results with "wrong" coordinates (only include Switzerland)
+false_coords <- as.numeric(venues_total$longitude) < 5.956303 | as.numeric(venues_total$longitude) > 10.491944 | 
+  as.numeric(venues_total$latitude) < 45.818031 | as.numeric(venues_total$latitude) > 47.808264
 
 ```
 
@@ -345,13 +362,13 @@ venues_total <- venues_total[!false_coords,]
 ```
 
 ```{r}
-#plot locations of results on a map of France
+#plot locations of results on a map of Switzerland
 ggplot() +
-  borders("world", "France", colour = "black", fill = "grey90") +
+  borders("world", "Switzerland", colour = "black", fill = "grey90") +
   geom_point(data = venues_total, aes(x = as.numeric(longitude), y = as.numeric(latitude))) + 
   theme_void() +
   coord_quickmap() +
-  labs(title = "Event locations across France",
+  labs(title = "Event locations across Switzerland",
        caption = "Source: ticketmaster.com") +
   theme(title = element_text(size=8, face='bold'),
         plot.caption = element_text(face = "italic"))
